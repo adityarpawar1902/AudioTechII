@@ -1,24 +1,31 @@
+import builtins
 import numpy as np
 from IPython.display import Audio
 from scipy.signal import butter, filtfilt
 from scipy.io.wavfile import read, write
 from scipy import signal
+from matplotlib import pyplot as plt
 
 class InvalidInputError(Exception):
     pass
+
 
 def genSine(freq, dur, fs=44100, amp=1, phi=0):
     t = np.arange(0, dur, 1/fs)
     return amp * np.sin(2*np.pi * freq * t + phi)
 
-# push check
+# GIT Sync check - @ 00:04 on 2/15/2026
+# GIT Sync check - @ 00:11 on 2/15/2026
+# GIT Sync check - @ 00:17 on 2/15/2026
+# GIT Sync check - @ 02:18 on 2/15/2026 - Fixes 'type' object call
+# GIT Sync check - @ 02:33 on 2/15/2026
 
 def genSaw(freq, dur, fs=44100, amp=1, phi=0):
     saw = genSine(freq, dur, fs, amp, phi)
     nyquist = fs / 2
     harms = int(nyquist / freq)
     for i in range (2, harms+1):
-        saw += genSine(f=freq*i, amp=(amp*(1/i)), fs=fs, dur=dur, phi=phi)
+        saw += genSine(freq=freq*i, amp=(amp*(1/i)), fs=fs, dur=dur, phi=phi)
     return saw
 
 def genSquare(freq, dur, fs=44100, amp=1, phi=0):
@@ -26,15 +33,20 @@ def genSquare(freq, dur, fs=44100, amp=1, phi=0):
     nyquist = fs / 2
     harms = int(nyquist / freq)
     for i in range (3, harms+1, 2):
-        square += genSine(f=freq*i, amp=(amp*(1/i)), fs=fs, dur=dur, phi=phi)
+        square += genSine(freq=freq*i, amp=(amp*(1/i)), fs=fs, dur=dur, phi=phi)
     return square
 
 def genTriangle(freq, dur, fs=44100, amp=1, phi=0):
     triangle = genSine(freq, dur, fs, amp, phi)
     nyquist = fs / 2
     harms = int(nyquist / freq)
+    count = 0 
     for i in range (3, harms+1, 2):
-        triangle += genSine(f=freq*i, amp=(amp*(1/i**2)), fs=fs, dur=dur, phi=phi)
+        if (count % 2 == 0):
+            triangle += genSine(freq=freq*i, amp=(-amp*(1/i**2)), fs=fs, dur=dur, phi=phi)
+        else:
+            triangle += genSine(freq=freq*i, amp=(amp*(1/i**2)), fs=fs, dur=dur, phi=phi)
+        count += 1
     return triangle
 
 # TODO: Replace the code below with your implementation of the waveforms.
@@ -53,20 +65,19 @@ def gen_wave(type, freq, dur, fs=44100, amp=1, phi=0):
     The function should return a numpy array
     wave (numpy array) = The generated waveform
     """
-    type = str(type)
     freq = float(freq)
     dur = float(dur)
     fs = float(fs)
     amp = float(amp)
-    if type(phi) == float or type(phi) == int:
+    if builtins.type(phi) == float or builtins.type(phi) == int or phi == 0:
         phi = float(phi)
     else:
         phi = phi
     type_option = np.array(['sine', 'square', 'saw', 'triangle'])
-    wave = np.array([])
+
 
     try:
-        if (type in type_option) & (type(type) == str) & (freq < fs/2) & (freq > 0) & (amp >= 0) & (dur > 0) & (fs > 0):
+        if (type in type_option) & (builtins.type(type) == str) & (freq < fs/2) & (freq > 0) & (amp >= 0) & (dur > 0) & (fs > 0):
             if type == 'sine':
                 # create sinusoid
                 wave = genSine(freq, dur, fs, amp, phi)
@@ -79,10 +90,10 @@ def gen_wave(type, freq, dur, fs=44100, amp=1, phi=0):
             elif type == 'triangle':
                 # create triangle
                 wave = genTriangle(freq, dur, fs, amp, phi)
-            return Audio(wave, rate=fs)
+            return wave
         elif (type not in type_option):
             raise InvalidInputError('Type must be sine, square, saw, or triangle')
-        elif(type(type) != str):
+        elif(builtins.type(type) != str):
             raise InvalidInputError('Type must be a string')
         elif(freq >= fs/2):
             raise InvalidInputError('Frequency will cause aliasing')
@@ -95,7 +106,7 @@ def gen_wave(type, freq, dur, fs=44100, amp=1, phi=0):
         elif(fs <= 0):
             raise InvalidInputError('Sampling frequency must be greater than 0')
     except InvalidInputError as e:
-        return e        
+        print(e)        
     
 
 # TODO: Replace the code below with your implementation of an ADSR
@@ -145,7 +156,15 @@ def adsr(data, attack, decay, sustain, release, fs=44100):
         r_time = (1/5 * t * 1000)
         print("Attack, decay and release time combine to a duration longer than input audio. Please input smaller values. Values set to defaults (each 1/5 of audio length).")
 
-    if sustain is None: 
+    
+    if sustain == 0 and d_time == 0:
+         print("Sustain and decay inputs both set to 0, ADSR will apply attack time ONLY. This will result in a peak at end of audio due to instant cut to an amplitude of 0.")
+         print("To access an ADSR that applies attack followed by release, bypassing decay and sustain parameters, set sustain to None (decay becomes nullified, value is irrelevant).")
+    elif sustain == 0:
+         print("Sustain input set to 0. ADSR will apply attack and decay times. Release time will become moot. Amplitude of 0 applied to remainder of audio.")
+         print("To access an ADSR that applies attack followed by release, bypassing decay and sustain parameters, set sustain to None (decay becomes nullified, value is irrelevant).")
+
+    if sustain == None:
         a_samp = int(a_time * fs / 1000)
         d_samp = 0
         r_samp = int(r_time * fs / 1000)
@@ -163,7 +182,7 @@ def adsr(data, attack, decay, sustain, release, fs=44100):
         zero_samp = len(zero_arr)
         env_samp = a_samp + d_samp + r_samp + s_samp + zero_samp #for error handling only
 
-    if env_samp != len(data) and s_lvl is None:
+    if env_samp != len(data) and sustain is None:
        zero_arr = np.zeros(len(data) - a_samp - d_samp - r_samp + (len(data) - env_samp))
        zero_samp = len(zero_arr)
        env_samp = a_samp + d_samp + r_samp + s_samp + zero_samp
@@ -293,7 +312,7 @@ def filter(data, type, cutoff_freq, fs=44100, order=5):
     #AI SHIT: if band pass/band stop, cutoff_freq should be a list of two frequencies, and normal_cutoff should be a list of two values. Also, type_option should include bandpass and bandstop. Then, in the if statement, you would need to check if type is in the new type_option, and if type is bandpass or bandstop, then use the new normal_cutoff and btype in the butter function.
     #should be an array rather than a float (cutoff for bandpass/bandstop 
     try:
-        if (type in type_option) & (type(type) == str) & (cutoff_freq > 0) & (fs > 0) & (order > 0 and order <= 6):
+        if (type in type_option) & (builtins.type(type) == str) & (cutoff_freq > 0) & (fs > 0) & (order > 0 and order <= 6):
            nyq = 0.5 * fs
            normal_cuttoff = cutoff_freq / nyq 
            (b, a) = butter(order, normal_cuttoff, btype=type, fs=fs)
@@ -301,7 +320,7 @@ def filter(data, type, cutoff_freq, fs=44100, order=5):
            return sig
         elif (type not in type_option):
             raise InvalidInputError('Type must be lowpass or highpass')
-        elif (type(type) != str):
+        elif (builtins.type(type) != str):
             raise InvalidInputError('Type must be a string')
         elif (cutoff_freq <= 0):
             raise InvalidInputError('Cutoff frequency must be greater than 0')
@@ -327,10 +346,33 @@ def reverb(data, ir, dry_wet=0.5):
     The function should return a numpy array
     sig (numpy array) = signal with reverb
     """
+    ir = str(ir)
+    dry_wet = 0.5
+    (fs, x) = read(ir)
+    
+    if len(x.shape) > 1:
+        x = x[:,0]
+        print("Impulse response file has more than one channel (likely stereo). It will be converted to mono by taking only the first channel.")
+    else:
+        x = x
+
     convert_to_float(data)
-    convert_to_float(ir)
-    sig = np.convolve(data, dry_wet * ir)
-    return sig
+    convert_to_float(x)
+
+
+    try:
+        if (dry_wet >= 0 and dry_wet <= 1):
+            sig = np.convolve(data, dry_wet * x)
+            return sig
+        elif (dry_wet < 0):
+            raise InvalidInputError('dry_wet should be more than 0')
+        elif (dry_wet > 1):
+            raise InvalidInputError('dry_wet should be less than 1')
+    except InvalidInputError as e:
+        print(e)
+    
+    
+    #add error handling for if file path does not exist. 
 
 def delay(data, delay_time, dry_wet=0.5, fs=44100):
     """
@@ -344,12 +386,28 @@ def delay(data, delay_time, dry_wet=0.5, fs=44100):
     The function should return a numpy array
     sig (numpy array) = signal with a delay
     """
-    data = data / abs(data).max()
-    copy = data.copy()
-    pad = np.zeros(int(fs/1000*delay_time))
-    orig = np.concatenate((data, pad))
-    delay = np.concatenate((pad, copy))
-    sig = orig + (dry_wet * delay)
-    return sig
-
-print(gen_wave('sine', 440, 1.0))
+    delay_time = float(delay_time)
+    dry_wet = float(dry_wet)
+    fs = float(fs)
+    #add 3 repeats
+    
+    try:
+        if (delay_time >= 0) and (dry_wet >= 0 and dry_wet <= 1) and (fs > 0):
+            data = data / abs(data).max()
+            copy = data.copy()
+            pad = np.zeros(int(fs/1000*delay_time))
+            orig = np.concatenate((data, pad))
+            delay = np.concatenate((pad, copy))
+            sig = orig + (dry_wet * delay)
+            return sig
+        elif (delay_time < 0):
+            raise InvalidInputError('Delay time must be positive.')
+        elif (dry_wet < 0 or dry_wet > 1):
+            raise InvalidInputError('Dry_wet must be between 0 and 1.')
+        elif (fs < 0):
+            raise InvalidInputError('Sample rate must be greater than 0.')
+    except InvalidInputError as e:
+        print(e)
+    
+x = gen_wave('sine', 400, 5, fs=44100)
+x2 = delay(x, 1000, dry_wet=8)
