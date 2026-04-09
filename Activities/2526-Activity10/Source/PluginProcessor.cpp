@@ -101,7 +101,11 @@ void _2526Activity10AudioProcessor::prepareToPlay (double sampleRate, int numSam
     amp = 1;
     phase = 0;
     
+<<<<<<< HEAD
     // envelope length in seconds
+=======
+    // envelope length in samples
+>>>>>>> upstream/main
     envSamples = samplingRate * int(envSec);
     
     envTracker = 0;
@@ -162,9 +166,17 @@ void _2526Activity10AudioProcessor::genSineWave(juce::AudioBuffer<float>& buffer
 {
     // Fill the buffer (in place) with a sinusoid
     // your code goes here!
+<<<<<<< HEAD
     float phaseStart = phase;
     for (int channel = 0; channel < buffer.getNumChannels(); ++channel) {
         auto * channelData = buffer.getWritePointer(channel);
+=======
+    
+    float phaseStart = phase;
+    for (int channel = 0; channel < buffer.getNumChannels(); ++channel) {
+        
+        auto* channelData = buffer.getWritePointer(channel);
+>>>>>>> upstream/main
         phase = phaseStart;
         
         for (int i = 0; i < samplesPerBlock; i++) {
@@ -175,8 +187,15 @@ void _2526Activity10AudioProcessor::genSineWave(juce::AudioBuffer<float>& buffer
             if (phase >= juce::MathConstants<float>::twoPi){
                 phase -= juce::MathConstants<float>::twoPi;
             }
+<<<<<<< HEAD
         }
     }
+=======
+            
+        }
+    }
+    
+>>>>>>> upstream/main
 }
 
 
@@ -194,12 +213,20 @@ void _2526Activity10AudioProcessor::applyEnvRamp(juce::AudioBuffer<float>& buffe
         auto* channelData = buffer.getWritePointer(channel);
         envTracker = envStart;
         
+<<<<<<< HEAD
         for(int i = 0; i < samplesPerBlock; i++) {
+=======
+        for (int i = 0; i < samplesPerBlock; i++) {
+>>>>>>> upstream/main
             
             if (envTracker < halfEnvLen) {
                 envVal = envTracker / halfEnvLen;
             }
+<<<<<<< HEAD
             else{
+=======
+            else {
+>>>>>>> upstream/main
                 envVal = 1 - (envTracker - halfEnvLen) / halfEnvLen;
             }
             
@@ -213,6 +240,10 @@ void _2526Activity10AudioProcessor::applyEnvRamp(juce::AudioBuffer<float>& buffe
         }
         
     }
+<<<<<<< HEAD
+=======
+    
+>>>>>>> upstream/main
 }
 
 //==============================================================================
