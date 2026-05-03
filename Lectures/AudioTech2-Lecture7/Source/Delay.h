@@ -39,7 +39,7 @@ private:
     int maxDelayInSamples = 0;
     int delayBufferSize = 0;
 
-    double sampleRate;
+    double sampleRate = 480;
     float mix = 0.5;
    
 };
