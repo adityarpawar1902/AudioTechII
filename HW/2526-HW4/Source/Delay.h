@@ -40,13 +40,14 @@ private:
 
     int delaySamples = 0;
     float delaySeconds = 0;
-    int maxDelayInSamples = 0;
+    int maxDelayInSamples = 48000;
     int delayBufferSize = 0;
 
-    double sampleRate;
+    double sampleRate = 48000;
     float mix = 0.5;
     float feedback = 0.2;
     
     juce::SmoothedValue<float> smoothedDelay;
+    float currDelay;
    
 };
